@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Tips for Reproducible R</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Robert Dahl Jacobsen" />
+    <meta name="date" content="2021-05-04" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Tips for Reproducible R
+### Robert Dahl Jacobsen
+### 2021-05-04
+
+---
+
+
+
+
+.center[
+![Questions](images/questions.jpg)
+]
+
+
+---
+
+# Reproducibility
+
+.pull-left[
+![Work over time](images/time.jpeg)
+]
+
+.pull-right[
+![It works on my machine](images/it_works_on_my_machine.jpeg)
+]
+
+
+---
+
+# Ambition for reproducible analysis
+
+.center[
+![Domino](images/domino_success.gif)
+]
+
+.footnote[Credit: &lt;https://github.com/mikecroucher/juliacon2018/tree/gh-pages&gt;]
+
+
+---
+
+# (Often) the reality
+
+.center[
+![Domino](images/domino_one.gif)
+]
+
+
+---
+
+# Problem: R's package management
+
+
+```r
+&gt; library(dplyr)
+```
+
+&gt; Warning message:
+&gt; package ‘dplyr’ was built under R version 4.0.5
+
+--
+
+Would like: 
+
+
+```r
+&gt; library(dplyr, version = x.y.z)
+```
+
+.footnote[See also: Jeroen Ooms, "Possible Directions for Improving Dependency Versioning in R
+", DOI: [10.32614/RJ-2013-01](http://dx.doi.org/10.32614/RJ-2013-019)]
+
+--
+
+Daily CRAN checks:
+
+&gt; https://cran.r-project.org/web/checks/check_results_dplyr.html
+
+
+---
+
+# My R installations
+
+
+```r
+fs::dir_ls("/opt/R")
+```
+
+```
+## /opt/R/3.5.1         /opt/R/3.6.0         /opt/R/3.6.1         
+## /opt/R/3.6.3         /opt/R/4.0.0         /opt/R/4.0.1         
+## /opt/R/4.0.2         /opt/R/4.0.3         /opt/R/4.0.4         
+## /opt/R/Rprofile.site
+```
+
+
+---
+
+# Package folders
+
+
+```bash
+du -sh /home/robert/R/x86_64-pc-linux-gnu-library/*
+```
+
+```
+## 323M	/home/robert/R/x86_64-pc-linux-gnu-library/3.5.1
+## 427M	/home/robert/R/x86_64-pc-linux-gnu-library/3.6.0
+## 447M	/home/robert/R/x86_64-pc-linux-gnu-library/3.6.1
+## 372M	/home/robert/R/x86_64-pc-linux-gnu-library/3.6.3
+## 329M	/home/robert/R/x86_64-pc-linux-gnu-library/4.0.0
+## 402M	/home/robert/R/x86_64-pc-linux-gnu-library/4.0.1
+## 531M	/home/robert/R/x86_64-pc-linux-gnu-library/4.0.2
+## 466M	/home/robert/R/x86_64-pc-linux-gnu-library/4.0.3
+## 629M	/home/robert/R/x86_64-pc-linux-gnu-library/4.0.4
+```
+
+
+---
+
+# Tip #1: Setup package folder
+
+Open `~/.Renviron`:
+
+
+```r
+usethis::edit_r_environ()
+```
+
+Set `R_LIBS_USER`: 
+
+
+```r
+readLines("~/.Renviron")
+```
+
+```
+## [1] "R_LIBS_USER=~/R/%p-library/%V"
+```
+
+.footnote[More info about "specifiers": `?R_LIBS_USER`]
+
+
+---
+
+# CRAN timeline
+
+&lt;img src="slides_files/figure-html/cran_timeline-1.png" width="100%" height="30%" /&gt;
+
+
+---
+
+# MRAN
+
+![MRAN](images/MRAN.png)
+
+.footnote[Credit: &lt;https://mran.microsoft.com/documents/rro/reproducibility&gt;]
+
+
+---
+
+# Set MRAN date
+
+
+```r
+getOption("repos")
+```
+
+```
+##                                             MRAN 
+## "https://mran.microsoft.com/snapshot/2021-03-31"
+```
+
+Choose date:
+
+| R version | Released   | MRAN       |
+| --------- | ---------- | ---------- |
+| R 4.0.0   | 2020-02-29 | 2020-06-06 |
+| R 4.0.1   | 2020-06-06 | 2020-06-22 |
+| R 4.0.2   | 2020-06-22 | 2020-10-10 |
+| R 4.0.3   | 2020-10-10 | 2021-02-15 |
+| R 4.0.4   | 2021-02-15 | 2021-03-31 |
+| R 4.0.5   | 2021-03-31 |            |
+
+
+---
+
+# Tip #2: Set MRAN date *globally*
+
+In
+
+
+```r
+fs::path(Sys.getenv("R_HOME"), "etc", "Rprofile.site")
+```
+
+```
+## /opt/R/4.0.4/lib/R/etc/Rprofile.site
+```
+
+include
+
+
+```r
+options(
+  repos = c("MRAN" = "https://mran.microsoft.com/snapshot/2021-03-31")
+)
+```
+
+.footnote[See also: &lt;https://rstats.wtf/r-startup.html&gt;]
+
+
+---
+
+# Tip #3: {here}
+
+
+```r
+setwd("/path/that/only/exists/on/my/computer")
+```
+
+--
+
+
+```r
+here::here()
+```
+
+```
+## [1] "/home/robert/Documents/talks/RUG/slides"
+```
+
+
+```r
+here::here("images")
+```
+
+```
+## [1] "/home/robert/Documents/talks/RUG/slides/images"
+```
+
+.footnote[See also &lt;https://www.tidyverse.org/blog/2017/12/workflow-vs-script&gt;]
+
+
+---
+
+# Tip #4: {targets}
+
+`Makefile`s for R
+
+.center[
+&lt;img src="images/gnu_make.png" width="50%" /&gt;
+]
+
+--
+
+Good intro:
+
+
+```r
+gsub(
+  pattern = "drake",
+  replacement = "targets",
+  "https://milesmcbain.xyz/posts/the-drake-post"
+)
+```
+
+
+---
+
+![Demo](images/demo.jpeg)
+
+
+---
+
+# Keyboard shortcuts
+
+Tools &gt; Modify Keyboard Shortcuts
+
+![targets shortcuts](images/targets_shortcuts.png)
+
+
+---
+
+# Tip #5: RStudio setup
+
+.pull-left[
+Windows:
+
+![RStudio Windows](images/RStudio_options_windows.png)
+]
+
+.pull-right[
+Linux
+
+![RStudio Linux](images/RStudio_options_linux.png)
+]
+
+
+---
+
+# RStudio config
+
+Windows (hidden folder):
+
+```
+C:/Users/&lt;user&gt;/AppData/Roaming/RStudio/rstudio-prefs.json
+```
+
+Ubuntu:
+
+```
+/home/&lt;user&gt;/.config/rstudio/rstudio-prefs.json
+```
+
+.footnote[
+My setup: &lt;https://github.com/robertdj/dotfiles&gt;
+]
+
+
+---
+
+# Tip #6: Git + 🔥
+
+![Docker](images/git.png)
+
+
+---
+
+# Tip #7: {renv}
+
+- **r**eproducible **env**ironments
+- Project package isolation
+
+.footnote[
+&lt;https://rstudio.github.io/renv&gt;
+]
+
+--
+
+Regular package paths:
+
+
+```r
+.libPaths()
+```
+
+```
+## [1] "/home/robert/R/x86_64-pc-linux-gnu-library/4.0.4"
+## [2] "/opt/R/4.0.4/lib/R/library"
+```
+
+
+---
+
+# {renv} package path
+
+Project with {renv}:
+
+
+```r
+renv_folder &lt;- fs::path_temp("renv_demo")
+fs::dir_create(renv_folder)
+callr::r(function() renv::init(restart = FALSE), wd = renv_folder)
+```
+
+```
+## [1] "/tmp/Rtmp2u9g4X/renv_demo"
+```
+
+--
+
+
+```r
+fs::dir_ls(path = renv_folder, all = TRUE)
+```
+
+```
+## /tmp/Rtmp2u9g4X/renv_demo/.Rprofile /tmp/Rtmp2u9g4X/renv_demo/renv      
+## /tmp/Rtmp2u9g4X/renv_demo/renv.lock
+```
+
+--
+
+
+```r
+out &lt;- processx::run("Rscript", c("-e", ".libPaths()"), wd = renv_folder)
+cat(out$stdout)
+```
+
+```
+## [1] "/tmp/Rtmp2u9g4X/renv_demo/renv/library/R-4.0/x86_64-pc-linux-gnu"
+## [2] "/tmp/RtmpylUi0a/renv-system-library"
+```
+
+
+---
+
+.center[
+![Docker](images/docker.png)
+]
+
+
+---
+
+![Demo](images/demo.jpeg)
+
+
+---
+
+# R in Docker
+
+.center[
+&lt;img src="images/rocker.png" width="133" /&gt;
+]
+
+Rocker project:
+
+- &lt;https://github.com/rocker-org&gt;
+
+- &lt;https://github.com/rocker-org/rocker-versioned2&gt;
+
+
+See also
+
+- &lt;https://github.com/robertdj/r-dockerfiles&gt;
+
+- &lt;https://github.com/robertdj/renv-docker&gt;
+
+- &lt;https://github.com/robertdj/pkg.deps&gt;
+
+
+---
+
+.center[
+![That's all folks](images/thats_all_folks.png)
+]
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
